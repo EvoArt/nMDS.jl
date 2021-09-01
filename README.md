@@ -5,3 +5,6 @@
 [![Build Status](https://github.com/EvoArt/nMDS.jl/workflows/CI/badge.svg)](https://github.com/EvoArt/nMDS.jl/actions)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/EvoArt/nMDS.jl?svg=true)](https://ci.appveyor.com/project/EvoArt/nMDS-jl)
 [![Coverage](https://codecov.io/gh/EvoArt/nMDS.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/EvoArt/nMDS.jl)
+
+
+<img src="https://github.com/EvoArt/nMDS.jl/blob/master/docs/schematic.svg">

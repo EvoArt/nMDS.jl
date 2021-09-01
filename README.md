@@ -7,4 +7,4 @@
 [![Coverage](https://codecov.io/gh/EvoArt/nMDS.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/EvoArt/nMDS.jl)
 
 
-<img src="https://github.com/EvoArt/nMDS.jl/blob/master/docs/schematic.PNG">
+[<img src="https://github.com/EvoArt/nMDS.jl/blob/master/docs/schematic.PNG">](https://link.springer.com/content/pdf/10.1007/BF02289694.pdf)

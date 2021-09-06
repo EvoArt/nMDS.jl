@@ -1,7 +1,7 @@
 module nMDS
 using  Distances,  LoopVectorization,  DataStructures
 
-include("functions.jl",
-    "main.jl")
+include("functions.jl")
+include("main.jl")
 export nmds
 end

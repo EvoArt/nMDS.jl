@@ -23,12 +23,11 @@ function nmds(D,L ::Int64,local_minimum_criterion = 0.02, max_iter ::Int64 = 100
     @inbounds for i in 2:K
         for j in 1:i-1 
             push!(DISSIM,D[i,j])
-            push!(IJ,(i,j))
             push!(Is,i)
             push!(Js,j)
         end
     end
-    M = length(IJ) 
+    M = length(Is) 
     DIST = Vector{Float64}(undef,M) # euclidean distances between points in X1
     DHAT = Vector{Float64}(undef,M) # fitted distances
     # gradient calculations will be broken into blocks to give vectors of length M
@@ -39,7 +38,6 @@ function nmds(D,L ::Int64,local_minimum_criterion = 0.02, max_iter ::Int64 = 100
     # sort parameters by order of values in DISSIM
     order = sortperm(DISSIM)
     DISSIM = DISSIM[order]
-    IJ = IJ[order]
     Is = Is[order]
     Js = Js[order]
     # generate random starting values for X1

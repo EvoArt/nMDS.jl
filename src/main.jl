@@ -63,7 +63,7 @@ function nmds(D,L ::Int64,local_minimum_criterion = 0.02, max_iter ::Int64 = 100
             local_minimum = true # exit loop
         end
     end
-    return X1, S
+    return X1#, S
 end
 
 # run the above algorith n times and return the result with the lowest stress value

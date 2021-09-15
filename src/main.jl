@@ -11,6 +11,7 @@
 function nmds(D,L ::Int64,local_minimum_criterion = 0.02, max_iter ::Int64 = 10000)
     # initialise varables and containers
     local_minimum = false
+    S=1
     K = size(D)[1] # Number of observations/points
     X2 = zeros(K,L) # Current gradient
     X3 = zeros(K,L) # Previous gradient
@@ -63,7 +64,7 @@ function nmds(D,L ::Int64,local_minimum_criterion = 0.02, max_iter ::Int64 = 100
             local_minimum = true # exit loop
         end
     end
-    return X1#, S
+    return X1, S
 end
 
 # run the above algorith n times and return the result with the lowest stress value
@@ -72,6 +73,6 @@ function nmds(D,L ::Int64,n ::Int64, local_minimum_criterion = 0.02, max_iter ::
     Threads.@threads for i in 1:n
         push!(results,nmds(D,L,local_minimum_criterion,max_iter))
     end
-    best = findmin([results[i][2] for i in 1:n])
+    best = findmin([results[i][2] for i in 1:n])[2]
     return results[best]
 end

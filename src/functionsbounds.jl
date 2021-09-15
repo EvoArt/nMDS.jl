@@ -41,6 +41,37 @@ function g(grhs2,grhs3,L,M,S,Is,Js,X2,grhs)
    return X2 *-S
 end
 
+function checkup(start,block,partition,d,M)
+    println("up")
+
+    ∑ = 0
+    i = start
+    while i < M
+    #while partition[i] == block
+        println(i,"","hi")
+        if partition[i] !== block
+            break
+        end
+        ∑+=d[i]
+        i+=1
+    end
+    return ∑/(i -start), i-1
+end
+function checkdown(start,block,partition,d)
+    println("down")
+    ∑ = 0
+    i = start
+    while  i>0
+        println(i,"","hip")
+        if partition[i] !== block
+            break
+        end
+        ∑+=d[i]
+        i-=1
+        
+    end
+    return ∑/(start-i), i+1
+end
 
 
 #### Monotone rgression pp.126-128 Kruscal(1964)
@@ -57,36 +88,84 @@ end
 # we move on to the next block and do the same. This procedure continues until all blocks are up and down
 # satisfied. 
 # The fitted values returned to DHAT are the d̂ values associated with the block each DIST value belongs to. 
+
 function monotone!(d,d̂,M, partition = false)
     loc = 1
     # if a starting partition is supplied e.g. because of ties, use it
     partition = partition == false ? collect(1:M) : partition
     block = view(d,partition .==loc)
+    localmean = d[1]
+    bounds = (1,1)
     #start at position 1, up-active i.e. check to see that the block to the right has a higher d̂
-    while (loc < maximum(partition)) | (mean(block) < mean(view(d,partition .==loc-1)))
-       # println(loc)
-        block = view(d,partition .==loc)
-    if (mean(block)< mean(view(d,partition .==loc+1))) | (loc == maximum(partition))
-        if (mean(block)> mean(view(d,partition .==loc-1))) | (loc ==1)
-            loc += 1
-        else
-            partition[partition .==loc] .=loc-1
-            partition[partition .>=loc] .-=1
-            loc -=1
+    while true#(loc < maximum(partition)) | (localmean < checkdown(bounds[1],loc-1,partition,d)[1])
+    println(loc)
+    println(bounds)
+    println(partition[1:10])
+    if loc < maximum(partition)   
+        upmean, upbound = checkup(bounds[2]+1,loc+1,partition,d,M)
+        println(localmean,"",upmean)
+        if upmean > localmean # if up satissfied
+            if loc > 1 # and not first block
+                downmean, downbound = checkdown(bounds[1]-1,loc-1,partition,d)#check down
+                if downmean < localmean # if down satisfied also
+                    loc += 1 # move to next block
+                    localmean = upmean
+                    bounds = (bounds[2]+1,upbound) 
+
+                else # if not down satisfied
+                    partition[bounds[1]:end] .-=1 
+                    localmean = (localmean*(bounds[2] -bounds[1]+1)+downmean*(bounds[1]-downbound))/(bounds[2]-downbound+1)
+                    bounds = (downbound,bounds[2]) # merge down
+                    loc -= 1
+                end
+            else #if first block and up satisfied
+                loc += 1 # move to next block
+                localmean = upmean
+                bounds = (bounds[2]+1,upbound) 
+
+            end
+        else # if not upsatisfied
+            partition[bounds[2]+1:end] .-=1 
+            localmean = (localmean*(bounds[2] -bounds[1]+1)+upmean*(upbound-bounds[2]))/(upbound-bounds[1]+1)
+            bounds = (bounds[1],upbound) # merge up
+            #loc += 1
+            if loc > 1 # and not first block
+                downmean, downbound = checkdown(bounds[1]-1,loc-1,partition,d)#check down
+              #  if downmean < localmean # if down satisfied also
+                 #   loc += 1 # move to next block
+                if   downmean > localmean  
+               # else # if not down satisfied
+                    partition[bounds[1]:end] .-=1 
+                    localmean = (localmean*(bounds[2] -bounds[1]+1)+downmean*(bounds[1]-downbound))/(bounds[2]-downbound+1)
+                    bounds = (downbound,bounds[2]) # merge down
+                    loc -= 1
+                 end
+            end
         end
-        else
-            partition[partition .==loc+1] .=loc
-            partition[partition .>loc] .-=1
+    else # if last block 
+        println("last block")
+        downmean, downbound = checkdown(bounds[1]-1,loc-1,partition,d)#check down
+        if downmean < localmean # if down satisfied
+            break # exit loop
+        else # if not down satisfied
+            partition[bounds[1]:end] .-=1 
+            localmean = (localmean*(bounds[2] -bounds[1]+1)+downmean*(bounds[1]-downbound))/(bounds[2]-downbound+1)
+            bounds = (downbound,bounds[2]) # merge down
+            loc -= 1
         end
     end
+
+    end
+
     blockmax = partition[end]
     blocks = 1:blockmax
     
     for block in blocks
         boolmask = partition .== block
-        d̂[boolmask] .= mean(view(d,boolmask))
+        d̂[boolmask] .= mean(d[boolmask])
     end
 end
+
 
 # normalize point coordinates
 function normalize(x,dim)
@@ -107,7 +186,7 @@ x′(x,g,α,K) = x .+ g*α/mag(g,K)
 function stress(d,d̂,M)
     S_star = 0
     T_star = 0
-    @inbounds for m in 1:M
+    @turbo for m in 1:M
         S_star += (d[m] - d̂[m])^2
         T_star += d[m]^2
     end

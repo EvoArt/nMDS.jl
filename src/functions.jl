@@ -157,6 +157,21 @@ function normalize(x,dim)
     x .-= mean(x,dims = dim)
     return x ./std(x,dims = dim)
 end
+function normalize!(x,K,L)
+
+    mn = mean(x,dims = 1)
+    @inbounds @fastmath for l in 1:L
+        ∑ = 0
+         for k in 1:K
+            x[k,l] -=mn[l]
+            ∑+=abs(x[k,l])
+        end
+        st = ∑/K
+         for k in 1:K
+            x[k,l] /=st
+        end
+    end
+end
 
 
 #### Step size related function pp.120-122 of Kruskal(1964)

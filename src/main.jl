@@ -55,7 +55,9 @@ function nmds(D,L ::Int64,local_minimum_criterion = 0.02, max_iter ::Int64 = 100
         X2 = g(g2,g3,L,M,S,Is,Js,X2,grhs) # put them together and calculate negative gradient
         # if there are 2 or more stress calculations so far, use Kruskals method to get new step size
         α =  length(stress_vec) < 2 ? α : α * angle_factor(X2,X3) * relaxation_factor(stress_vec) * good_luck_factor(stress_vec)
-        X1 = normalize(x′(X1,X2,α,K),1) # get new point values
+        #X1 = normalize(x′(X1,X2,α,K),1) # get new point values
+        X1 = x′(X1,X2,α,K)
+        normalize!(X1,K,L)
         X3 .= X2 # update previous gradient
         
         if iter == 1 # on first iteration

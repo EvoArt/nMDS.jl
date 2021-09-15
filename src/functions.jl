@@ -21,11 +21,14 @@ function grhs2!(d, d̂, S_star,T_star,M,res)
 end 
 # Third term
 function grhs3!(x,d, M,L,res,Is,Js) 
-    Imat = view(x,Is,:)
-    Jmat = view(x,Js,:)
+    #Imat = view(x,Is,:)
+    #Jmat = view(x,Js,:)
+    #Imat = x[Is,:]
+    #Jmat = x[Js,:]
     @turbo for m in 1:M
         for l in 1:L
-            res[m,l] = (Imat[m,l] - Jmat[m,l])/d[m]
+            #res[m,l] = (Imat[m,l] - Jmat[m,l])/d[m]
+            res[m,l] = (x[Is[m],l] - x[Js[m],l] )/d[m]
         end
     end
 end 
@@ -41,6 +44,32 @@ function g(grhs2,grhs3,L,M,S,Is,Js,X2,grhs)
    return X2 *-S
 end
 
+function checkup(start,block,partition,d,M)
+    ∑ = 0
+    i = start
+     while i < M
+    #while partition[i] == block
+        if partition[i] !== block
+            break
+        end
+        ∑+=d[i]
+        i+=1
+    end
+    return ∑/(i -start), i-1
+end
+function checkdown(start,block,partition,d)
+    ∑ = 0
+    i = start
+    while  i>0
+        if partition[i] !== block
+            break
+        end
+        ∑+=d[i]
+        i-=1
+        
+    end
+    return ∑/(start-i), i+1
+end
 
 
 #### Monotone rgression pp.126-128 Kruscal(1964)
@@ -59,24 +88,44 @@ end
 # The fitted values returned to DHAT are the d̂ values associated with the block each DIST value belongs to. 
 function monotone!(d,d̂,M, partition = false)
     loc = 1
+    localmean = d[1]
+    bounds = (1,1)
+    downmean, downbound = checkdown(bounds[1]-1,loc-1,partition,d)#check down
     # if a starting partition is supplied e.g. because of ties, use it
     partition = partition == false ? collect(1:M) : partition
-    block = view(d,partition .==loc)
+    #block = view(d,partition .==loc)
     #start at position 1, up-active i.e. check to see that the block to the right has a higher d̂
-    while (loc < maximum(partition)) | (mean(block) < mean(view(d,partition .==loc-1)))
-       # println(loc)
-        block = view(d,partition .==loc)
-    if (mean(block)< mean(view(d,partition .==loc+1))) | (loc == maximum(partition))
-        if (mean(block)> mean(view(d,partition .==loc-1))) | (loc ==1)
-            loc += 1
+    #while (loc < maximum(partition)) | (mean(block) < mean(view(d,partition .==loc-1)))
+    @inbounds while (loc < maximum(partition)) | (localmean < downmean)
+ 
+    # println(loc)
+       # block = view(d,partition .==loc)
+    upmean, upbound = checkup(bounds[2]+1,loc+1,partition,d,M)
+  
+    #if (mean(block)< mean(view(d,partition .==loc+1))) | (loc == maximum(partition))
+    if (localmean < upmean) | (loc == maximum(partition))
+    #if (mean(block)> mean(view(d,partition .==loc-1))) | (loc ==1)
+    downmean, downbound = checkdown(bounds[1]-1,loc-1,partition,d)#check down
+    if (localmean > downmean) | (loc ==1)
+            #loc += 1
+            loc += 1 # move to next block
+            localmean = upmean
+            bounds = (bounds[2]+1,upbound)
         else
-            partition[partition .==loc] .=loc-1
-            partition[partition .>=loc] .-=1
-            loc -=1
+            @inbounds @fastmath for i in bounds[1]:M
+                partition[i] -=1
+            end
+            localmean = (localmean*(bounds[2] -bounds[1]+1)+downmean*(bounds[1]-downbound))/(bounds[2]-downbound+1)
+            bounds = (downbound,bounds[2]) # merge down
+            loc -= 1
+
         end
         else
-            partition[partition .==loc+1] .=loc
-            partition[partition .>loc] .-=1
+            @inbounds @fastmath for i in bounds[2]+1:M
+                partition[i] -=1
+            end
+            localmean = (localmean*(bounds[2] -bounds[1]+1)+upmean*(upbound-bounds[2]))/(upbound-bounds[1]+1)
+            bounds = (bounds[1],upbound) # merge up
         end
     end
     blockmax = partition[end]
@@ -93,6 +142,7 @@ function normalize(x,dim)
     x .-= mean(x,dims = dim)
     return x ./std(x,dims = dim)
 end
+
 
 #### Step size related function pp.120-122 of Kruskal(1964)
 cosθ(g,g″) = sum(g .* g″)/(sqrt(sum(g .^2))*sqrt(sum(g″ .^2)))
@@ -114,9 +164,16 @@ function stress(d,d̂,M)
     return S_star, T_star, sqrt(S_star/T_star)
 end
 # calculate Euclidean distances between points
-function get_dist!(X1,DIST,Is,Js,M)
-    @inbounds for m in 1:M
-        DIST[m] = euclidean(X1[Is[m],:],X1[Js[m],:])
+
+
+function get_dist!(X1,DIST,Is,Js,M,L)
+    @turbo for m in 1:M
+        #DIST[m] = euclidean(X1[Is[m],:],X1[Js[m],:])
+        acc = 0.0
+        for l in 1:L
+            acc += (X1[Is[m],l]-X1[Js[m],l])^2
+        end
+        DIST[m] = acc^0.5
     end
 end
 

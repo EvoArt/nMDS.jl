@@ -46,7 +46,7 @@ function nmds(D,L ::Int64,local_minimum_criterion = 0.02, max_iter ::Int64 = 100
     iter = 0
     while (local_minimum == false) & (iter <max_iter) 
         iter += 1
-        get_dist!(X1,DIST,Is,Js,M) # calculate euclidean distances between points
+        get_dist!(X1,DIST,Is,Js,M,L) # calculate euclidean distances between points
         monotone!(DIST,DHAT,M) # fit DHAT values vie monotone regression
         S_star, T_star, S = stress(DIST,DHAT,M) # calculate stress
         push!(stress_vec,S)   # accumulate stress in vector

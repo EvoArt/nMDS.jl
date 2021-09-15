@@ -128,12 +128,27 @@ function monotone!(d,d̂,M, partition = false)
             bounds = (bounds[1],upbound) # merge up
         end
     end
-    blockmax = partition[end]
+    blockmax = partition[M]
     blocks = 1:blockmax
+    ind = 1  
+    lower = 1
     
-    for block in blocks
-        boolmask = partition .== block
-        d̂[boolmask] .= mean(view(d,boolmask))
+    @inbounds for block in blocks
+        ∑ = 0.0
+        len = 0.0
+        while partition[ind] == block
+            ∑ += d[ind]
+            len+=1
+            ind+=1
+            if ind >M
+                break
+            end
+        end
+        mn = ∑/len
+        for i in lower:ind-1
+            d̂[i] = mn
+        end
+
     end
 end
 

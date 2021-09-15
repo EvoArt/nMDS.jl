@@ -96,14 +96,14 @@ function monotone!(d,d̂,M, partition = false)
     #block = view(d,partition .==loc)
     #start at position 1, up-active i.e. check to see that the block to the right has a higher d̂
     #while (loc < maximum(partition)) | (mean(block) < mean(view(d,partition .==loc-1)))
-    @inbounds while (loc < maximum(partition)) | (localmean < downmean)
+    @inbounds while (loc < partition[M]) | (localmean < downmean)
  
     # println(loc)
        # block = view(d,partition .==loc)
     upmean, upbound = checkup(bounds[2]+1,loc+1,partition,d,M)
   
     #if (mean(block)< mean(view(d,partition .==loc+1))) | (loc == maximum(partition))
-    if (localmean < upmean) | (loc == maximum(partition))
+    if (localmean < upmean) | (loc == partition[M])
     #if (mean(block)> mean(view(d,partition .==loc-1))) | (loc ==1)
     downmean, downbound = checkdown(bounds[1]-1,loc-1,partition,d)#check down
     if (localmean > downmean) | (loc ==1)

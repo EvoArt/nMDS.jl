@@ -47,7 +47,7 @@ end
 function checkup(start,block,partition,d,M)
     ∑ = 0
     i = start
-     while i < M
+     while i <= M
     #while partition[i] == block
         if partition[i] !== block
             break
@@ -97,7 +97,6 @@ function monotone!(d,d̂,M, partition = false)
     #start at position 1, up-active i.e. check to see that the block to the right has a higher d̂
     #while (loc < maximum(partition)) | (mean(block) < mean(view(d,partition .==loc-1)))
     @inbounds while (loc < partition[M]) | (localmean < downmean)
- 
     # println(loc)
        # block = view(d,partition .==loc)
     upmean, upbound = checkup(bounds[2]+1,loc+1,partition,d,M)
@@ -127,6 +126,7 @@ function monotone!(d,d̂,M, partition = false)
             localmean = (localmean*(bounds[2] -bounds[1]+1)+upmean*(upbound-bounds[2]))/(upbound-bounds[1]+1)
             bounds = (bounds[1],upbound) # merge up
         end
+
     end
     blockmax = partition[M]
     blocks = 1:blockmax
@@ -148,6 +148,7 @@ function monotone!(d,d̂,M, partition = false)
         for i in lower:ind-1
             d̂[i] = mn
         end
+        lower = ind
 
     end
 end
@@ -157,16 +158,20 @@ function normalize(x,dim)
     x .-= mean(x,dims = dim)
     return x ./std(x,dims = dim)
 end
-function normalize!(x,K,L)
-
-    mn = mean(x,dims = 1)
+function normalize!(x ::Array{Float64},K ::Int64,L ::Int64)
+   # mn = mean(x,dims = 1)
     @inbounds @fastmath for l in 1:L
-        ∑ = 0
-         for k in 1:K
-            x[k,l] -=mn[l]
-            ∑+=abs(x[k,l])
+        ∑ = 0.0
+        @turbo for k in 1:K
+            ∑+=x[k,l]
         end
-        st = ∑/K
+        mn = ∑/K
+        ∑ = 0.0
+         for k in 1:K
+            x[k,l] -=mn
+            ∑+=x[k,l]^2
+        end
+        st = sqrt(∑/K)
          for k in 1:K
             x[k,l] /=st
         end
@@ -181,7 +186,26 @@ relaxation_factor(x) = 1.3/(1+(five_step_ratio(x)^5))
 five_step_ratio(x) = min(1,x[end]/x[1])
 good_luck_factor(x) = min(1,x[end]/x[end-1])
 mag(g,K) = sqrt(sum(g .^2)/K)
+function mag(g,K,L)
+    ∑ = 0.0
+    @turbo for l in 1:L
+        for k in 1:K
+        ∑ += g[k,l]^2
+    end
+end
+    return sqrt(∑/K)
+end
+
 x′(x,g,α,K) = x .+ g*α/mag(g,K)
+function x′!(x,g,α,K,L) 
+    gα =  g*α/mag(g,K,L)
+     @turbo for l in 1:L
+        for k in 1:K
+            x[k,l] += gα[k,l]
+        end
+    end
+end
+
 
 # Calculate the stress (S), S⋆ an T⋆ according to Kruskals stress formula pp.115 & 125 Kruskal(1964)
 function stress(d,d̂,M)

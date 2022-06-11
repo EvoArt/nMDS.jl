@@ -111,7 +111,7 @@ function monotone!(d,d̂,M, partition = false)
             localmean = upmean
             bounds = (bounds[2]+1,upbound)
         else
-            @inbounds @fastmath for i in bounds[1]:M
+            @turbo for i in bounds[1]:M
                 partition[i] -=1
             end
             localmean = (localmean*(bounds[2] -bounds[1]+1)+downmean*(bounds[1]-downbound))/(bounds[2]-downbound+1)
@@ -120,7 +120,7 @@ function monotone!(d,d̂,M, partition = false)
 
         end
         else
-            @inbounds @fastmath for i in bounds[2]+1:M
+            @turbo for i in bounds[2]+1:M
                 partition[i] -=1
             end
             localmean = (localmean*(bounds[2] -bounds[1]+1)+upmean*(upbound-bounds[2]))/(upbound-bounds[1]+1)
@@ -158,7 +158,7 @@ function normalize(x,dim)
     x .-= mean(x,dims = dim)
     return x ./std(x,dims = dim)
 end
-function normalize!(x ::Array{Float64},K ::Int64,L ::Int64)
+function normalize!(x ,K ::Int64,L ::Int64)
    # mn = mean(x,dims = 1)
     @inbounds @fastmath for l in 1:L
         ∑ = 0.0
@@ -227,7 +227,7 @@ function get_dist!(X1,DIST,Is,Js,M,L)
         for l in 1:L
             acc += (X1[Is[m],l]-X1[Js[m],l])^2
         end
-        DIST[m] = acc^0.5
+        DIST[m] = sqrt(acc)
     end
 end
 

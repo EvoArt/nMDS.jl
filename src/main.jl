@@ -89,8 +89,7 @@ function nmds(D,L ::Int64,local_minimum_criterion = 0.000002, max_iter ::Int64 =
     #    X1[:,i] .-= mean(X1[:,i])
     #    X1[:,i] ./=sqrt(mean(X1[:,i].^2.))
     #end
-    println(S)
-    return X1, S
+    return X1, S;
 end
 using  Distances,  LoopVectorization,  DataStructures, Statistics, MultivariateStats
 
